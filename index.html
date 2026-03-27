@@ -504,16 +504,42 @@ function goAuth(mode) {
   showScreen('auth');
 }
 
+// ── build a guaranteed-valid email from any username ──
+function toEmail(u) {
+  return u.toLowerCase().replace(/[^a-z0-9]/g, '') + '@gymcrew.app';
+}
+
+// ── inappropriate username filter ──
+// Long words blocked as substrings; short words only blocked as exact matches
+const BAD_LONG = [
+  'fuck','shit','cunt','bitch','cock','dick','pussy','asshole','bastard','twat',
+  'wank','slut','whore','nigger','nigga','faggot','retard','piss','arse',
+  'porn','anal','dildo','penis','vagina','boob','nude','naked','rape',
+  'kill','murder','suicide','terrorist','hitler','nazi','bollocks','prick',
+  'slag','tosser','wanker','bellend','motherfucker','fucker','shithead',
+  'dipshit','dumbass','jackass','arsehole','cumshot','cum','boner','erect'
+];
+const BAD_EXACT = new Set(['ass','fag','tit','sex','poo','pee','poop','homo','slut']);
+
+function containsBadWord(str) {
+  const clean = str.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (BAD_LONG.some(w => clean.includes(w))) return true;
+  if (BAD_EXACT.has(clean)) return true;
+  return false;
+}
+
 // ── main auth handler ──
 async function doAuth() {
-  const username = document.getElementById('a-user').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const rawInput = document.getElementById('a-user').value.trim();
+  const username = rawInput.toLowerCase().replace(/[^a-z0-9_]/g, '');
   const password = document.getElementById('a-pass').value;
   const errEl    = document.getElementById('a-err');
   const okEl     = document.getElementById('a-ok');
   errEl.textContent = '';
   okEl.style.display = 'none';
 
-  if (!username) { errEl.textContent = 'Please enter a username.'; return; }
+  if (!username) { errEl.textContent = 'Please enter a username (letters and numbers only).'; return; }
+  if (containsBadWord(username)) { errEl.textContent = 'That username is not allowed. Please choose a different one.'; return; }
   if (username.length < 3) { errEl.textContent = 'Username must be at least 3 characters.'; return; }
   if (!password) { errEl.textContent = 'Please enter a password.'; return; }
   if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
@@ -528,7 +554,7 @@ async function doAuth() {
   btn.innerHTML = '<span class="spinner"></span>Please wait...';
 
   try {
-    const email = username + '@gymcrew.local';
+    const email = toEmail(username);
 
     if (isRegisterMode) {
       // Try to sign up
@@ -970,7 +996,9 @@ function renderCrew() {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (session?.user) {
-      const uname = session.user.user_metadata?.username || session.user.email.split('@')[0];
+      // Always prefer the username stored in metadata at signup
+      const uname = session.user.user_metadata?.username
+        || session.user.email.replace(/@gymcrew\.(app|local)$/, '');
       await enterApp(session.user, uname);
     }
     // else: stays on landing screen
