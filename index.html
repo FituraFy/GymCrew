@@ -492,8 +492,8 @@ function switchMode(mode) {
     : 'Sign in to track your gains with the crew';
   document.getElementById('a-p2-wrap').style.display = isRegisterMode ? 'block' : 'none';
   document.getElementById('a-switch').innerHTML = isRegisterMode
-    ? 'Already a member? <button onclick="switchMode('login')">Sign in</button>'
-    : 'No account? <button onclick="switchMode('register')">Create one</button>';
+    ? `Already a member? <button onclick="switchMode('login')">Sign in</button>`
+    : `No account? <button onclick="switchMode('register')">Create one</button>`;
   document.getElementById('a-btn').textContent = isRegisterMode ? 'Create account' : 'Sign in';
   document.getElementById('a-err').textContent = '';
   document.getElementById('a-ok').style.display = 'none';
